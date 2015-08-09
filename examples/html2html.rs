@@ -17,9 +17,13 @@
 
 extern crate tendril;
 extern crate html5ever;
+extern crate time;
 
-use std::io::{self, Write};
+use std::io::{self, Write, sink}; //, BufWriter
 use std::default::Default;
+
+use time::now;
+
 
 use tendril::{ByteTendril, ReadExt};
 
@@ -32,17 +36,22 @@ fn main() {
     let mut input = ByteTendril::new();
     io::stdin().read_to_tendril(&mut input).unwrap();
     let input = input.try_reinterpret().unwrap();
+    let start_time = now();
+
     let dom: RcDom = parse(one_input(input), ParseOpts {
         tree_builder: TreeBuilderOpts {
-            drop_doctype: true,
+            //drop_doctype: true,
             ..Default::default()
         },
         ..Default::default()
     });
 
     // The validator.nu HTML2HTML always prints a doctype at the very beginning.
-    io::stdout().write_all(b"<!DOCTYPE html>\n")
-        .ok().expect("writing DOCTYPE failed");
-    serialize(&mut io::stdout(), &dom.document, Default::default())
+    //io::stdout().write_all(b"<!DOCTYPE html>\n")
+    //    .ok().expect("writing DOCTYPE failed");
+    serialize(&mut sink(), &dom.document, Default::default())
         .ok().expect("serialization failed");
+    //serialize(&mut BufWriter::new(io::stdout()), &dom.document, Default::default())
+    //    .ok().expect("serialization failed");
+    writeln!(&mut io::stderr(), "{}", now() - start_time).unwrap();
 }
